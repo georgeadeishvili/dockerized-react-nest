@@ -1,0 +1,57 @@
+version: '3.9'
+services:
+  api:
+    container_name: nft_api
+    image: nft-api:1.0.0
+    build:
+      context: ./server/
+      target: development
+      dockerfile: ./Dockerfile
+    command: yarn start:dev
+    ports:
+      - 4000:4000
+      - 9229:9229
+    env_file:
+      - ./.env
+    networks:
+      - network
+    volumes:
+      - ./server:/server
+      - /server/node_modules
+    restart: unless-stopped
+    depends_on:
+      - postgres
+  postgres:
+    container_name: nft_db
+    image: postgres:alpine
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_DATABASE_NAME}
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - network
+  client:
+    container_name: nft_client
+    image: nft-client:1.0.0
+    build:
+      context: ./client/
+      dockerfile: ./Dockerfile
+    ports:
+      - 80:80
+    networks: 
+      - network
+    volumes: 
+      - ./client:/client
+      - /client/node_modules
+    links: 
+      - api
+networks:
+  network:
+volumes:
+  pgdata:
